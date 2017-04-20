@@ -1,0 +1,31 @@
+{
+  "name": "wikibot",
+  "version": "1.0.1",
+  "description": "A Slack Bot for wikipedia",
+  "main": "index.js",
+  "scripts": {
+    "start": "export $(cat .env) && node index"
+  },
+  "keywords": [
+    "Wiki",
+    "Slack"
+  ],
+  "author": "Paul Asjes",
+  "license": "ISC",
+  "dependencies": {
+    "@slack/client": "^2.1.0",
+    "async": "^2.3.0",
+    "dotenv": "^4.0.0",
+    "express": "^4.15.2",
+    "http": "0.0.0",
+    "natural": "^0.5.1",
+    "node-wolfram": "0.0.1",
+    "redis": "^2.7.1",
+    "request": "^2.81.0",
+    "slack-client": "^1.5.1",
+    "slackbots": "^1.0.2",
+    "superagent": "^1.7.1",
+    "weather-js": "^2.0.0",
+    "yahoo-weather": "^2.2.2"
+  }
+}
