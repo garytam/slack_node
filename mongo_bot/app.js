@@ -7,6 +7,7 @@ const commands = ['csid', 'gst']
 const Bot = require('./Bot');
 var db_legal_entity = mongojs('127.0.0.1:27017/legal_entity', ['legal_entity']);
 var db_trades = mongojs('127.0.0.1:27017/trades', ['trades']);
+var db_score = mongojs('127.0.0.1:27017/score', ['score']);
 const WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL;
 const async = require("async");
 
@@ -78,14 +79,23 @@ function search_legal_entity(command, parameter, callback){
                         }
                         callback(err, legal_entity, trade);
                     });
+                },
+                function(legal_entity, trade, callback){
+                    let _legal_entity_id = legal_entity.legal_entity_id;
+                    db_score.score.findOne({legal_entity_id: _legal_entity_id, current: true}, function(err, score){
+                        if (err) {
+                            console.log("fail to retrieve trade.  Error => ", err);
+                        }
+                        callback(err, legal_entity, trade, score);
+                    })
                 }
             ],
-            function (err, legal_entity, trade) {
+            function (err, legal_entity, trade, score) {
                 if (err) {
                     callback(err);
                 }
 
-                let slack_response = process_legal_entity(err, legal_entity, trade);
+                let slack_response = process_legal_entity(err, legal_entity, trade, score);
                 callback(null, slack_response);
             });
     }   catch(err){
@@ -99,7 +109,7 @@ function search_legal_entity(command, parameter, callback){
 // ************************************ //
 //    Process a single legal entity     //
 // ************************************ //
-function process_legal_entity(err, legal_entity, trade){
+function process_legal_entity(err, legal_entity, trade, score){
     if (err){
         console.log("error " + err);
     }
@@ -121,17 +131,93 @@ function process_legal_entity(err, legal_entity, trade){
 
     let total_contract_value = numberWithCommas(legal_entity.total_contract_value);
 
-    var attachment= `
-current : ${legal_entity.current}
-CSID    : ${legal_entity.csid}
-GST #   : ${legal_entity.gst_number}
-TRADE   : ${trade.trade_type}
- 
-legal_entity_id ------ ${legal_entity.legal_entity_id}
-total contract_value - ${total_contract_value} 
-total contracts ------ ${legal_entity.total_contracts}
-size ----------------- ${legal_entity.size}
-`;
+//     var attachment= `
+// Q Score    : ${score.q_score}
+// trade rank : ${score.trade_rank}
+// current    : ${legal_entity.current}
+// CSID       : ${legal_entity.csid}
+// GST #      : ${legal_entity.gst_number}
+// TRADE      : ${trade.trade_type}
+
+// var attachment= `
+// legal_entity_id ------ ${legal_entity.legal_entity_id}
+// total contract_value - ${total_contract_value}
+// total contracts ------ ${legal_entity.total_contracts}
+// size ----------------- ${legal_entity.size}
+// `;
+
+    var fields = [];
+    let q_score = {
+        "title": "Q Score",
+        "value": score.q_score,
+        "short": true
+    }
+
+    let trade_rank = {
+        "title": "Trade Rank",
+        "value": score.trade_rank,
+        "short": true
+    }
+
+    let current = {
+        "title": "Current",
+        "value": legal_entity.current,
+        "short": true
+    }
+
+    let csid = {
+        "title": "CSID",
+        "value": legal_entity.csid,
+        "short": true
+    }
+
+    let gst = {
+        "title": "GST number",
+        "value": legal_entity.gst_number,
+        "short": true
+    }
+
+    let trade_field = {
+        "title": "Trade",
+        "value": trade.trade_type,
+        "short": false
+    }
+
+    let total_contract_field = {
+        "title": "Total Contract",
+        "value": legal_entity.total_contracts,
+        "short": true
+    }
+
+    let size_field = {
+        "title": "Company Size",
+        "value": legal_entity.size,
+        "short": true
+    }
+
+    let legal_entity_id_field = {
+        "title": "Legal Entity ID",
+        "value": legal_entity.legal_entity_id,
+        "short": false
+    }
+
+    let total_contract_value_field = {
+        "title": "Total Contract Value",
+        "value": total_contract_value,
+        "short": true
+    }
+
+    fields.push(legal_entity_id_field);
+    fields.push(q_score);
+    fields.push(trade_rank);
+    fields.push(current);
+    fields.push(csid);
+    fields.push(gst);
+    fields.push(size_field);
+    fields.push(total_contract_field);
+    fields.push(total_contract_value_field);
+
+    fields.push(trade_field);
 
     // var return_obj = { "title": d.display_name,
     //     "sub_url" : d.url,
@@ -149,9 +235,10 @@ size ----------------- ${legal_entity.size}
     var slack_object = {
         "title": name,
         "title_url": sub_url,
-        "text": attachment,
+        // "text": attachment,
         "color": "#3AA3E3",
-        "footer": prov_city
+        "footer": prov_city,
+        "fields": fields
     }
 
     slack_result.push(slack_object)

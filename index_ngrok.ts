@@ -2,7 +2,7 @@
 var http = require('http');
 
 // We define the port we want to listen to. Logically this has to be the same port than we specified on ngrok.
-const PORT=4390;
+const PORT=3100;
 
 // We create a function which handles any requests and sends a simple response
 function handleRequest(request, response){

@@ -18,6 +18,6 @@ http.createServer((req, res) => {
 
     // send the response to Slack as a message
     res.end(response);
-}).listen(8080, '0.0.0.0');
+}).listen(3100, '0.0.0.0');
 
-console.log('Server running at http://0.0.0.0:8080/');
+console.log('Server running at http://0.0.0.0:3100/');
